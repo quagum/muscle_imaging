@@ -1,8 +1,8 @@
 from concurrent.futures import process
 import cv2 as cv
-from matplotlib.pyplot import gray
+from matplotlib.pyplot import draw, gray
 import numpy as np
-image = cv.imread("cIMG-0007-00001.jpg")
+image = cv.imread("cIMG-0007-00207.jpg")
 #cv.imshow("original", image)
 
 def sobel_processing(image):
@@ -23,26 +23,25 @@ def canny_processing(image):
     #cv.imshow("Processed", image)
     return image 
 
-def draw_lines(image):
-    lines = cv.HoughLinesP(image, 1, np.pi/180, 400)
+def convert_64_8(image_64):
+    image_8 = image_64 - image_64.min() 
+    image_8 = image_64 / image_64.max() * 255
+    return np.uint8(image_8)
+
+def draw_lines(processed_image, output_image):
+    lines = cv.HoughLinesP(processed_image, 1, np.pi/180, 320)
     for line in lines:
         x1, y1, x2, y2 = line[0]
-        cv.line(image, (x1, y1), (x2, y2), (0, 255, 0), 1)
+        cv.line(output_image, (x1, y1), (x2, y2), (0, 255, 0), 1)
+    return output_image
 
 processed = sobel_processing(image)
-image = processed - processed.min() # Now between 0 and 8674
-image = processed / processed.max() * 255
-convert = np.uint8(image)
-#cv.imshow("convert", convert)
-
+convert = convert_64_8(processed)
 gray = cv.cvtColor(convert, cv.COLOR_BGR2GRAY)
-cv.imshow("gray", gray)
+final = draw_lines(gray, processed)
 
 
-lines = cv.HoughLinesP(gray, 1, np.pi/180, 400)
-for line in lines:
-    x1, y1, x2, y2 = line[0]
-    cv.line(processed, (x1, y1), (x2, y2), (0, 255, 0), 1)
-cv.imshow("processed", processed)
-
+#use houghcircles to find ellipses and remove the small blemishes in the processed image
+#this would leave only long lines left on the image and so the houghlines could be more fine tuned and not draw lines on the blemishes 
+cv.imshow("processed", final)
 cv.waitKey(0)
