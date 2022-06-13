@@ -1,8 +1,9 @@
 from concurrent.futures import process
 import cv2 as cv
+from cv2 import ellipse
 from matplotlib.pyplot import draw, gray
 import numpy as np
-image = cv.imread("cIMG-0007-00207.jpg")
+image = cv.imread(r"C:\Users\charl\njit\muscle_imaging\MRI\MVC0-3\cIMG-0007-00098.jpg")
 #cv.imshow("original", image)
 
 def sobel_processing(image):
@@ -28,6 +29,32 @@ def convert_64_8(image_64):
     image_8 = image_64 / image_64.max() * 255
     return np.uint8(image_8)
 
+def convert_64_6(image_64):
+    return 0
+
+def fill_noise(processed_image, out_image):
+    params = cv.SimpleBlobDetector_Params()
+
+    params.filterByCircularity = True
+    params.minArea = 1
+    params.maxArea = 10
+
+    params.filterByConvexity = True
+    params.minConvexity = 0.2
+
+    params.filterByInertia = True
+    params.minInertiaRatio = 0.01
+
+    detector = cv.SimpleBlobDetector_create(params)
+
+    keypoints = detector.detect(processed_image)
+    blank = np.zeros((1, 1))
+    blobs = cv.drawKeypoints(out_image, keypoints, blank, (0, 0, 255), cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+ 
+    # Show blobs
+    cv.imshow("Filtering Circular Blobs Only", blobs)
+    cv.waitKey(0)
+
 def draw_lines(processed_image, output_image):
     lines = cv.HoughLinesP(processed_image, 1, np.pi/180, 320)
     for line in lines:
@@ -44,4 +71,5 @@ final = draw_lines(gray, processed)
 #use houghcircles to find ellipses and remove the small blemishes in the processed image
 #this would leave only long lines left on the image and so the houghlines could be more fine tuned and not draw lines on the blemishes 
 cv.imshow("processed", final)
+fill_noise(convert, convert)
 cv.waitKey(0)

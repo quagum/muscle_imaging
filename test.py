@@ -1,7 +1,7 @@
 from tkinter import Image
 import cv2 as cv
 from numpy import average
-image = cv.imread("cIMG-0007-00001.jpg")
+image = cv.imread("cIMG-0007-00207.jpg")
 
 first_x = image.shape[0]+1
 first_y = image.shape[1]+1
