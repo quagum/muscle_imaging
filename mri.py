@@ -1,11 +1,9 @@
-from concurrent.futures import process
 import cv2 as cv
 from cv2 import ellipse
 from cv2 import split
 from matplotlib.pyplot import draw, gray
 import numpy as np
-
-image = cv.imread(r"C:\Users\charl\njit\muscle_imaging\MRI\MVC0-3\cIMG-0007-00198.jpg")
+import os 
 
 def convert_64_8(image_64):
     image_8 = image_64 - image_64.min() 
@@ -16,12 +14,6 @@ def image_preprocessing(input_image):
     cropped = input_image[100:600, 0:951]
     scaled = cv.pyrDown(cropped) 
     blurred = cv.GaussianBlur(scaled, (7, 7), 0)
-    return blurred 
-
-def image_preprocessing_2(input_image):
-    cropped = input_image[100:600, 0:951]
-    scaled = cv.pyrDown(cropped) 
-    blurred = cv.GaussianBlur(scaled, (0,11), 9)
     return blurred     
 
 def sobel_processing(input_image):
@@ -36,17 +28,17 @@ def image_processing(input_image):
     convert = convert_64_8(processed)
     return convert
 
-def draw_blank_lines(input_image):
+def draw_blank_lines(input_image, canvas):
     blank = np.zeros(input_image.shape)
     blank.fill(0)
-    minLineLength = 200
-    maxLineGap = 0
-    lines = cv.HoughLinesP(input_image, cv.HOUGH_PROBABILISTIC, np.pi/180, 200, maxLineGap, minLineLength)
+    minLineLength = 100 #0
+    maxLineGap = 150 #0
+    lines = cv.HoughLinesP(input_image, cv.HOUGH_PROBABILISTIC, np.pi/180, 420, maxLineGap, minLineLength) #420
     for x in range(0, len(lines)):
         for x1,y1,x2,y2 in lines[x]:
             pts = np.array([[x1, y1 ], [x2 , y2]], np.int32)
-            cv.polylines(blank, [pts], True, (255, 255, 255), 5)
-    return blank
+            cv.polylines(canvas, [pts], True, (0, 255, 255), 5)
+    return canvas
     
 #x=476 y=200
 #not all MRI scans will have the same middle --> how to find the middle?  
@@ -61,11 +53,26 @@ def automatic_crop(input_image):
     crop = input_image[min_y:max_y,min_x:max_x]
     return crop 
 
-blurred = image_preprocessing(image)
-gray = cv.cvtColor(blurred, cv.COLOR_BGR2GRAY)
-ret, thresh = cv.threshold(gray, 0, 255, cv.THRESH_BINARY | cv.THRESH_OTSU) #255
-cv.imshow("thresh", thresh)
-sobel = image_processing(thresh)
-cv.imshow("sobel", sobel)
-cv.imshow("final", draw_blank_lines(sobel))
-cv.waitKey(0)
+def multi(): 
+    folder = 'scans'
+    for file in os.listdir(r'C:\Users\charl\njit\muscle_imaging\scans'):
+        f = os.path.join(folder, file)
+        image = cv.imread(f)
+        blurred = image_preprocessing(image)
+        gray = cv.cvtColor(blurred, cv.COLOR_BGR2GRAY)
+        ret, thresh = cv.threshold(gray, 0, 255, cv.THRESH_BINARY_INV | cv.THRESH_OTSU) #255
+        sobel = image_processing(thresh)
+        cv.imshow(f, draw_blank_lines(sobel, blurred))
+        cv.waitKey(0)
+
+def single(): 
+    image = cv.imread(r'C:\Users\charl\njit\muscle_imaging\scans\cIMG-0007-00083.jpg')
+    blurred = image_preprocessing(image)
+    gray = cv.cvtColor(blurred, cv.COLOR_BGR2GRAY)
+    ret, thresh = cv.threshold(gray, 0, 255, cv.THRESH_BINARY_INV | cv.THRESH_OTSU) #255
+    cv.imshow('thresh', thresh)
+    sobel = image_processing(thresh)
+    cv.imshow('00083', draw_blank_lines(sobel, blurred))
+    cv.waitKey(0)
+
+single()
