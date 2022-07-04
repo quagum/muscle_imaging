@@ -1,9 +1,11 @@
+from concurrent.futures import process
 import cv2 as cv
 from cv2 import ellipse
 from cv2 import split
+from cv2 import CAP_PROP_SPEED
 from matplotlib.pyplot import draw, gray
 import numpy as np
-import os 
+import os
 
 def convert_64_8(image_64):
     image_8 = image_64 - image_64.min() 
@@ -14,7 +16,7 @@ def image_preprocessing(input_image):
     cropped = input_image[100:600, 0:951]
     scaled = cv.pyrDown(cropped) 
     blurred = cv.GaussianBlur(scaled, (7, 7), 0)
-    return blurred     
+    return blurred  
 
 def sobel_processing(input_image):
     sobel = cv.Sobel(input_image, cv.CV_64F, dx=0, dy=1, ksize=9)
@@ -29,15 +31,13 @@ def image_processing(input_image):
     return convert
 
 def draw_blank_lines(input_image, canvas):
-    blank = np.zeros(input_image.shape)
-    blank.fill(0)
-    minLineLength = 100 #0
-    maxLineGap = 150 #0
-    lines = cv.HoughLinesP(input_image, cv.HOUGH_PROBABILISTIC, np.pi/180, 420, maxLineGap, minLineLength) #420
+    minLineLength = 150
+    maxLineGap = 0
+    lines = cv.HoughLinesP(input_image, cv.HOUGH_PROBABILISTIC, np.pi/180, 200, maxLineGap, minLineLength)
     for x in range(0, len(lines)):
         for x1,y1,x2,y2 in lines[x]:
             pts = np.array([[x1, y1 ], [x2 , y2]], np.int32)
-            cv.polylines(canvas, [pts], True, (0, 255, 255), 5)
+            cv.polylines(canvas, [pts], True, (0, 255, 255), 3)
     return canvas
     
 #x=476 y=200
@@ -54,25 +54,37 @@ def automatic_crop(input_image):
     return crop 
 
 def multi(): 
-    folder = 'scans'
-    for file in os.listdir(r'C:\Users\charl\njit\muscle_imaging\scans'):
-        f = os.path.join(folder, file)
+    dir = 'scans'
+    for file in os.listdir(dir):
+        f = os.path.join(dir, file)
         image = cv.imread(f)
-        blurred = image_preprocessing(image)
-        gray = cv.cvtColor(blurred, cv.COLOR_BGR2GRAY)
-        ret, thresh = cv.threshold(gray, 0, 255, cv.THRESH_BINARY_INV | cv.THRESH_OTSU) #255
-        sobel = image_processing(thresh)
-        cv.imshow(f, draw_blank_lines(sobel, blurred))
+
+        cropped = image[100:600, 0:951]
+        scaled = cv.pyrDown(cropped)  
+        gray = cv.cvtColor(scaled, cv.COLOR_BGR2GRAY)
+        sobel = cv.Sobel(gray, cv.CV_64F, dx=0, dy=1, ksize=3)
+        #cv.imshow('sobel', sobel)
+        blurred = cv.GaussianBlur(sobel, (31, 31), 0, 1)
+        T, thresh = cv.threshold(blurred, 1, 255, cv.THRESH_BINARY)
+        #cv.imshow('thresh', thresh)
+
+        convert = convert_64_8(thresh)
+        cv.imshow(f, draw_blank_lines(convert, scaled))
         cv.waitKey(0)
 
-def single(): 
-    image = cv.imread(r'C:\Users\charl\njit\muscle_imaging\scans\cIMG-0007-00083.jpg')
-    blurred = image_preprocessing(image)
-    gray = cv.cvtColor(blurred, cv.COLOR_BGR2GRAY)
-    ret, thresh = cv.threshold(gray, 0, 255, cv.THRESH_BINARY_INV | cv.THRESH_OTSU) #255
+def single():
+    image = cv.imread(r"C:\Users\charl\njit\muscle_imaging\scans\cIMG-0007-00001.jpg")
+    cropped = image[100:600, 0:951]
+    scaled = cv.pyrDown(cropped)  
+    gray = cv.cvtColor(scaled, cv.COLOR_BGR2GRAY)
+    sobel = cv.Sobel(gray, cv.CV_64F, dx=0, dy=1, ksize=9)
+    cv.imshow('sobel', sobel)
+    blurred = cv.GaussianBlur(sobel, (31, 31), 0, 1)
+    T, thresh = cv.threshold(blurred, 1, 255, cv.THRESH_BINARY)
     cv.imshow('thresh', thresh)
-    sobel = image_processing(thresh)
-    cv.imshow('00083', draw_blank_lines(sobel, blurred))
+
+    convert = convert_64_8(thresh)
+    cv.imshow('final', draw_blank_lines(convert, scaled))
     cv.waitKey(0)
 
-single()
+multi()
