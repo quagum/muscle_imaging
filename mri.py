@@ -54,32 +54,40 @@ def automatic_crop(input_image):
     return crop 
 
 def multi(): 
-    dir = 'scans'
+    dir = 'MRI'
     for file in os.listdir(dir):
+        os.chdir(r'C:\Users\charl\njit\muscle_imaging')
         f = os.path.join(dir, file)
-        image = cv.imread(f)
+        try:
+            image = cv.imread(f)
+            print(f)
+            cropped = image[100:600, 0:951]
+            scaled = cv.pyrDown(cropped)  
+            gray = cv.cvtColor(scaled, cv.COLOR_BGR2GRAY)
+            sobel = cv.Sobel(gray, cv.CV_64F, dx=0, dy=1, ksize=3)
+            #cv.imshow('sobel', sobel)
+            blurred = cv.GaussianBlur(sobel, (31, 31), 0, 1)
+            T, thresh = cv.threshold(blurred, 1, 255, cv.THRESH_BINARY)
+            #cv.imshow('thresh', thresh)
+            convert = convert_64_8(thresh)
+            final = draw_blank_lines(convert, scaled)
 
-        cropped = image[100:600, 0:951]
-        scaled = cv.pyrDown(cropped)  
-        gray = cv.cvtColor(scaled, cv.COLOR_BGR2GRAY)
-        sobel = cv.Sobel(gray, cv.CV_64F, dx=0, dy=1, ksize=3)
-        #cv.imshow('sobel', sobel)
-        blurred = cv.GaussianBlur(sobel, (31, 31), 0, 1)
-        T, thresh = cv.threshold(blurred, 1, 255, cv.THRESH_BINARY)
-        #cv.imshow('thresh', thresh)
+            os.chdir(r'C:\Users\charl\njit\muscle_imaging\drawn')
+            if cv.imwrite(file, final):
+                print('done!')
+        except:
+            print("error")
 
-        convert = convert_64_8(thresh)
-        cv.imshow(f, draw_blank_lines(convert, scaled))
-        cv.waitKey(0)
 
 def single():
     image = cv.imread(r"C:\Users\charl\njit\muscle_imaging\scans\cIMG-0007-00001.jpg")
     cropped = image[100:600, 0:951]
     scaled = cv.pyrDown(cropped)  
     gray = cv.cvtColor(scaled, cv.COLOR_BGR2GRAY)
-    sobel = cv.Sobel(gray, cv.CV_64F, dx=0, dy=1, ksize=9)
+    sobel = cv.Sobel(gray, cv.CV_64F, dx=0, dy=1, ksize=3)
     cv.imshow('sobel', sobel)
     blurred = cv.GaussianBlur(sobel, (31, 31), 0, 1)
+    cv.imshow('sobel blur', blurred)
     T, thresh = cv.threshold(blurred, 1, 255, cv.THRESH_BINARY)
     cv.imshow('thresh', thresh)
 
