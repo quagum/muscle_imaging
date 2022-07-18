@@ -1,12 +1,5 @@
-from concurrent.futures import process
-from inspect import CORO_RUNNING
 import cv2 as cv
-from cv2 import ellipse
-from cv2 import split
-from cv2 import CAP_PROP_SPEED
-from matplotlib.pyplot import draw, gray
 import numpy as np
-from stl import mesh 
 import os
 
 def convert_64_8(image_64):
@@ -40,7 +33,7 @@ def draw_blank_lines(input_image, canvas, z):
     for x in range(0, len(lines)):
         for x1,y1,x2,y2 in lines[x]:
             line = [[x1, y1, z], [x2, y2, z]]
-            pts = np.array([[x1, y1 ], [x2 , y2]], np.int32)
+            pts = np.array([[x1, y1], [x2, y2]], np.int32)
             coordinates.append(line)
             cv.polylines(canvas, [pts], True, (0, 255, 255), 1)
     return canvas, coordinates
@@ -83,7 +76,7 @@ def multi_image():
         except:
             print("error")
 
-def single():
+def single_point():
     image = cv.imread(r"C:\Users\charl\njit\muscle_imaging\scans\cIMG-0007-00001.jpg")
     z = 1
     cropped = image[100:600, 0:951]
@@ -95,12 +88,11 @@ def single():
 
     convert = convert_64_8(thresh)
     final, coordinates = draw_blank_lines(convert, scaled, z)
-    print(coordinates)
-    cv.imshow('final', final)
-    cv.waitKey(0)
+    return coordinates
 
 def multi_point():
     dir = 'MRI'
+    all_points = []
     for file in os.listdir(dir):
         z = int(file[10:len(file)-4])
         f = os.path.join(dir, file)
@@ -113,6 +105,5 @@ def multi_point():
         T, thresh = cv.threshold(blurred, 1, 255, cv.THRESH_BINARY)
         convert = convert_64_8(thresh)
         final, coordinates = draw_blank_lines(convert, scaled, z)
-        print(coordinates)
-
-single()
+        all_points.append(coordinates)
+    return all_points
