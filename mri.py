@@ -38,19 +38,6 @@ def draw_blank_lines(input_image, canvas, z):
             cv.polylines(canvas, [pts], True, (0, 255, 255), 1)
     return canvas, coordinates
     
-#x=476 y=200
-#not all MRI scans will have the same middle --> how to find the middle?  
-def automatic_crop(input_image):
-    ret, thresh = cv.threshold(input_image, 127, 255, cv.THRESH_BINARY) #no idea why it forces another variable to be stored 
-    cv.imshow('threshold', thresh)
-    white_pt_coords = np.argwhere(thresh)
-    min_y = min(white_pt_coords[:,0])
-    min_x = min(white_pt_coords[:,1])
-    max_y = max(white_pt_coords[:,0])
-    max_x = max(white_pt_coords[:,1])
-    crop = input_image[min_y:max_y,min_x:max_x]
-    return crop 
-
 def multi_image(): 
     dir = 'MRI'
     for file in os.listdir(dir):
@@ -85,13 +72,14 @@ def single_point():
     sobel = cv.Sobel(gray, cv.CV_64F, dx=0, dy=1, ksize=3)
     blurred = cv.GaussianBlur(sobel, (31, 31), 0, 1)
     T, thresh = cv.threshold(blurred, 1, 255, cv.THRESH_BINARY)
-
     convert = convert_64_8(thresh)
     final, coordinates = draw_blank_lines(convert, scaled, z)
+    cv.imshow("final", final)
+    cv.waitKey()
     return coordinates
 
 def multi_point():
-    dir = 'MRI'
+    dir = 'scans'
     all_points = []
     for file in os.listdir(dir):
         z = int(file[10:len(file)-4])
@@ -107,3 +95,5 @@ def multi_point():
         final, coordinates = draw_blank_lines(convert, scaled, z)
         all_points.append(coordinates)
     return all_points
+
+#cropped image dimensions: x=476 y=200

@@ -23,10 +23,10 @@ print("Drawing points")
 
 
 ypoints = []
-for index in range(0, 20, 2):
+for index in range(0, len(all_points), 100):
     for pair in all_points[index]:
         point1, point2 = pair[0], pair[1]
-        x, y, z = [[point1[0], point2[0]], [300-point1[1], 300-point2[1]], [point1[2], point2[2]]]
+        x, y, z = [[point1[0], point2[0]], [300-point1[1], 300-point2[1]], [point1[2]*0.3, point2[2]*0.3]]
         ypoints.append(y[0])
         ax.scatter(x, z, y, c='red', s=1)
         ax.plot(x, z, y, color='black')
