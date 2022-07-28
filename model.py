@@ -1,5 +1,6 @@
 from mpl_toolkits import mplot3d
 from mri import multi_point
+import pickle 
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -11,29 +12,33 @@ fig = plt.figure()
 
 ax = fig.add_subplot(projection="3d")
 ax.set_xlabel('x')
-ax.set_ylabel('z')
+#ax.set_ylabel('z')
 ax.set_zlabel('y')
 ax.set_xlim(-200, 700)
-ax.set_ylim(0, 500)
-ax.set_zlim(0, 500)
-
-print("Collecting points")
-all_points = multi_point() 
-print("Drawing points")
+ax.set_ylim(-200, 400)
+ax.set_zlim(0, 400)
 
 
-ypoints = []
-for index in range(0, len(all_points), 100):
-    for pair in all_points[index]:
-        point1, point2 = pair[0], pair[1]
-        x, y, z = [[point1[0], point2[0]], [300-point1[1], 300-point2[1]], [point1[2]*0.3, point2[2]*0.3]]
-        ypoints.append(y[0])
-        ax.scatter(x, z, y, c='red', s=1)
-        ax.plot(x, z, y, color='black')
-plt.show()
 
+def model(starting_slice, number_of_slices, interval):
+    print("Collecting points")
+    collected_points = multi_point(starting_slice, number_of_slices, interval) 
+    print("Drawing points")
 
-fig, (ax1) = plt.subplots(nrows=1)
-ax1.hist(ypoints)
-plt.show()
-#fig.savefig("test", dpi=None, facecolor='w', edgecolor='w', orientation='portrait', format=None,transparent=False, bbox_inches=None, pad_inches=0.1,metadata=None)
+    #ypoints = []
+    for index in range(len(collected_points)):
+        slice = collected_points[index]
+        for pair in slice:
+            point1, point2 = pair[0], pair[1]
+            X, Y, Z = [[point1[0], point2[0]], [300-point1[1], 300-point2[1]], [point1[2], point2[2]]]
+            #ypoints.append(Y[0])
+
+            ax.scatter(X, Z, Y, c='black', s=0.2)
+            ax.plot(X, Z, Y, color='pink')
+    ax.set_title(str(starting_slice) + " to " + str(number_of_slices) + " with interval of " + str(interval))
+    plt.show()
+
+model(400, 500, 20)
+#fig, (ax1) = plt.subplots(nrows=1)
+#ax1.hist(ypoints)
+#plt.show()

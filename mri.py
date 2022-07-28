@@ -78,10 +78,10 @@ def single_point():
     cv.waitKey()
     return coordinates
 
-def multi_point():
+def multi_point(starting_slice, number_of_scans, interval):
     dir = 'scans'
     all_points = []
-    for file in os.listdir(dir):
+    for file in (os.listdir(dir))[starting_slice:number_of_scans+1:interval]:
         z = int(file[10:len(file)-4])
         f = os.path.join(dir, file)
         image = cv.imread(f)
