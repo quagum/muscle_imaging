@@ -37,12 +37,28 @@ def draw_blank_lines(input_image, canvas, z):
             coordinates.append(line)
             cv.polylines(canvas, [pts], True, (0, 255, 255), 1)
     return canvas, coordinates
-    
+
+def single_image(image_path):
+    scaled = cv.imread(image_path)
+    z = 1
+    #cropped = image[100:600, 0:951]
+    #scaled = cv.pyrDown(cropped)  
+    gray = cv.cvtColor(scaled, cv.COLOR_BGR2GRAY)
+    sobel = cv.Sobel(gray, cv.CV_64F, dx=0, dy=1, ksize=3)
+    blurred = cv.GaussianBlur(sobel, (31, 31), 0, 1)
+    T, thresh = cv.threshold(blurred, 1, 255, cv.THRESH_BINARY)
+    convert = convert_64_8(thresh)
+    final, coordinates = draw_blank_lines(convert, scaled, z)
+    cv.imshow(image_path, final)
+    cv.waitKey()
+    return coordinates    
+
 def multi_image(): 
-    dir = 'MRI'
+    dir = 'scans'
     for file in os.listdir(dir):
         os.chdir(r'C:\Users\charl\njit\muscle_imaging')
         f = os.path.join(dir, file)
+        z = int(file[10:len(file)-4])
         try:
             image = cv.imread(f)
             print(f)
@@ -55,28 +71,13 @@ def multi_image():
             T, thresh = cv.threshold(blurred, 1, 255, cv.THRESH_BINARY)
             #cv.imshow('thresh', thresh)
             convert = convert_64_8(thresh)
-            final = draw_blank_lines(convert, scaled)
+            final, coordinates = draw_blank_lines(convert, scaled, z)
 
             os.chdir(r'C:\Users\charl\njit\muscle_imaging\drawn')
             if cv.imwrite(file, final):
                 print('done!')
-        except:
-            print("error")
-
-def single_point():
-    image = cv.imread(r"C:\Users\charl\njit\muscle_imaging\scans\cIMG-0007-00001.jpg")
-    z = 1
-    cropped = image[100:600, 0:951]
-    scaled = cv.pyrDown(cropped)  
-    gray = cv.cvtColor(scaled, cv.COLOR_BGR2GRAY)
-    sobel = cv.Sobel(gray, cv.CV_64F, dx=0, dy=1, ksize=3)
-    blurred = cv.GaussianBlur(sobel, (31, 31), 0, 1)
-    T, thresh = cv.threshold(blurred, 1, 255, cv.THRESH_BINARY)
-    convert = convert_64_8(thresh)
-    final, coordinates = draw_blank_lines(convert, scaled, z)
-    cv.imshow("final", final)
-    cv.waitKey()
-    return coordinates
+        except Exception as e:
+            print(str(e))
 
 def multi_point(starting_slice, number_of_scans, interval):
     dir = 'scans'
@@ -96,4 +97,25 @@ def multi_point(starting_slice, number_of_scans, interval):
         all_points.append(coordinates)
     return all_points
 
+def priori(previous_image, current_image):
+    current_image = cv.imread(current_image)
+    previous_image = cv.imread(previous_image)
+    cropped = current_image[100:600, 0:951]
+
+
+    scaled = cv.pyrDown(cropped)  
+    z = 1
+    #cropped = image[100:600, 0:951]
+    #scaled = cv.pyrDown(cropped)  
+    gray = cv.cvtColor(scaled, cv.COLOR_BGR2GRAY)
+    sobel = cv.Sobel(gray, cv.CV_64F, dx=0, dy=1, ksize=3)
+    blurred = cv.GaussianBlur(sobel, (31, 31), 0, 1)
+    T, thresh = cv.threshold(blurred, 1, 255, cv.THRESH_BINARY)
+    convert = convert_64_8(thresh)
+    final, coordinates = draw_blank_lines(convert, scaled, z)
+    cv.imshow(image_path, final)
+    cv.waitKey()
+    return coordinates
 #cropped image dimensions: x=476 y=200
+
+single_image("cIMG-0007-00358.jpg")
