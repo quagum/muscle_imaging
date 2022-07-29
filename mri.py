@@ -24,6 +24,15 @@ def generate_data(input_image): #takes pre-processed image and generates 2D data
     coordinates_2D = cv.HoughLinesP(input_image, cv.HOUGH_PROBABILISTIC, np.pi/180, 200, maxLineGap, minLineLength)
     return coordinates_2D
 
+def draw_line(image): #takes image and returns cropped/scaled image with an attempted highlight of muscle boundaries
+    pre, original = image_preprocessing(image)
+    lines = generate_data(pre)
+    for x in range(0, len(lines)):
+        for x1,y1,x2,y2 in lines[x]:
+            pts = np.array([[x1, y1], [x2, y2]], np.int32)
+            cv.polylines(original, [pts], True, (0, 255, 255), 1)
+    return draw_line
+
 def draw_blank_lines(input_image, canvas, z):
     minLineLength = 150
     maxLineGap = 0
@@ -118,14 +127,4 @@ def priori(previous_image, current_image):
 
 #cropped image dimensions: x=476 y=200
 
-def test(image):
-    pre, original = image_preprocessing(image)
-    lines = generate_data(pre)
-    for x in range(0, len(lines)):
-        for x1,y1,x2,y2 in lines[x]:
-            pts = np.array([[x1, y1], [x2, y2]], np.int32)
-            cv.polylines(original, [pts], True, (0, 255, 255), 1)
-    cv.imshow("title", original)
-    cv.waitKey()
 
-test("cIMG-0007-00001.jpg")
