@@ -7,23 +7,27 @@ def convert_64_8(image_64):
     image_8 = image_64 / image_64.max() * 255
     return np.uint8(image_8)
 
-def image_preprocessing(input_image):
-    cropped = input_image[100:600, 0:951]
-    scaled = cv.pyrDown(cropped) 
-    blurred = cv.GaussianBlur(scaled, (7, 7), 0)
-    return blurred  
-
-def sobel_processing(input_image):
-    sobel = cv.Sobel(input_image, cv.CV_64F, dx=0, dy=1, ksize=9)
-    image = cv.GaussianBlur(sobel, (0,11), 9)
-    binary = np.zeros_like(image)
-    binary[(image >= 30000) & (image <= 2000000)] = 1
-    return binary
-
-def image_processing(input_image):
-    processed = sobel_processing(input_image)
-    convert = convert_64_8(processed)
+def image_preprocessing(image_path):
+    image = cv.imread(image_path)
+    cropped = image[100:600, 0:951]
+    scaled = cv.pyrDown(cropped)  
+    gray = cv.cvtColor(scaled, cv.COLOR_BGR2GRAY)
+    sobel = cv.Sobel(gray, cv.CV_64F, dx=0, dy=1, ksize=3)
+    blurred = cv.GaussianBlur(sobel, (31, 31), 0, 1)
+    T, thresh = cv.threshold(blurred, 1, 255, cv.THRESH_BINARY)
+    convert = convert_64_8(thresh)
     return convert
+
+def generate_data(input_image): #takes pre-processed image and generates 2D data points
+    minLineLength = 150
+    maxLineGap = 0
+    lines = cv.HoughLinesP(input_image, cv.HOUGH_PROBABILISTIC, np.pi/180, 200, maxLineGap, minLineLength)
+    coordinates_2D = []
+    for x in range(0, len(lines)):
+        for x1,y1,x2,y2 in lines[x]:
+            pts = np.array([[x1, y1], [x2, y2]], np.int32)
+            coordinates_2D.append(pts)
+    return coordinates_2D
 
 def draw_blank_lines(input_image, canvas, z):
     minLineLength = 150
@@ -35,6 +39,19 @@ def draw_blank_lines(input_image, canvas, z):
             line = [[x1, y1, z], [x2, y2, z]]
             pts = np.array([[x1, y1], [x2, y2]], np.int32)
             coordinates.append(line)
+            cv.polylines(canvas, [pts], True, (0, 255, 255), 1)
+    return canvas, coordinates
+
+def draw_lines(reference_image, canvas):
+    minLineLength = 150
+    maxLineGap = 0
+    lines = cv.HoughLinesP(reference_image, cv.HOUGH_PROBABILISTIC, np.pi/180, 200, maxLineGap, minLineLength)
+    coordinates = []
+    for x in range(0, len(lines)):
+        for x1,y1,x2,y2 in lines[x]:
+            line = [[x1, y1], [x2, y2]]
+            coordinates.append(line)
+            pts = np.array([[x1, y1], [x2, y2]], np.int32)
             cv.polylines(canvas, [pts], True, (0, 255, 255), 1)
     return canvas, coordinates
 
@@ -116,6 +133,11 @@ def priori(previous_image, current_image):
     cv.imshow(image_path, final)
     cv.waitKey()
     return coordinates
+
 #cropped image dimensions: x=476 y=200
 
-single_image("cIMG-0007-00358.jpg")
+def test(image):
+    pre = image_preprocessing(image)
+    print(generate_data(pre))
+
+test("cIMG-0007-00001.jpg")
