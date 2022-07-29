@@ -2,12 +2,12 @@ import cv2 as cv
 import numpy as np
 import os
 
-def convert_64_8(image_64):
+def convert_64_8(image_64): #converts input image of type CV_64F to CV_8U
     image_8 = image_64 - image_64.min() 
     image_8 = image_64 / image_64.max() * 255
     return np.uint8(image_8)
 
-def image_preprocessing(image_path):
+def image_preprocessing(image_path): #takes image path and returns cropped grayscale image and cropped processed image
     image = cv.imread(image_path)
     cropped = image[100:600, 0:951]
     scaled = cv.pyrDown(cropped)  
@@ -16,17 +16,12 @@ def image_preprocessing(image_path):
     blurred = cv.GaussianBlur(sobel, (31, 31), 0, 1)
     T, thresh = cv.threshold(blurred, 1, 255, cv.THRESH_BINARY)
     convert = convert_64_8(thresh)
-    return convert
+    return convert, scaled
 
 def generate_data(input_image): #takes pre-processed image and generates 2D data points
     minLineLength = 150
     maxLineGap = 0
-    lines = cv.HoughLinesP(input_image, cv.HOUGH_PROBABILISTIC, np.pi/180, 200, maxLineGap, minLineLength)
-    coordinates_2D = []
-    for x in range(0, len(lines)):
-        for x1,y1,x2,y2 in lines[x]:
-            pts = np.array([[x1, y1], [x2, y2]], np.int32)
-            coordinates_2D.append(pts)
+    coordinates_2D = cv.HoughLinesP(input_image, cv.HOUGH_PROBABILISTIC, np.pi/180, 200, maxLineGap, minLineLength)
     return coordinates_2D
 
 def draw_blank_lines(input_image, canvas, z):
@@ -39,19 +34,6 @@ def draw_blank_lines(input_image, canvas, z):
             line = [[x1, y1, z], [x2, y2, z]]
             pts = np.array([[x1, y1], [x2, y2]], np.int32)
             coordinates.append(line)
-            cv.polylines(canvas, [pts], True, (0, 255, 255), 1)
-    return canvas, coordinates
-
-def draw_lines(reference_image, canvas):
-    minLineLength = 150
-    maxLineGap = 0
-    lines = cv.HoughLinesP(reference_image, cv.HOUGH_PROBABILISTIC, np.pi/180, 200, maxLineGap, minLineLength)
-    coordinates = []
-    for x in range(0, len(lines)):
-        for x1,y1,x2,y2 in lines[x]:
-            line = [[x1, y1], [x2, y2]]
-            coordinates.append(line)
-            pts = np.array([[x1, y1], [x2, y2]], np.int32)
             cv.polylines(canvas, [pts], True, (0, 255, 255), 1)
     return canvas, coordinates
 
@@ -137,7 +119,13 @@ def priori(previous_image, current_image):
 #cropped image dimensions: x=476 y=200
 
 def test(image):
-    pre = image_preprocessing(image)
-    print(generate_data(pre))
+    pre, original = image_preprocessing(image)
+    lines = generate_data(pre)
+    for x in range(0, len(lines)):
+        for x1,y1,x2,y2 in lines[x]:
+            pts = np.array([[x1, y1], [x2, y2]], np.int32)
+            cv.polylines(original, [pts], True, (0, 255, 255), 1)
+    cv.imshow("title", original)
+    cv.waitKey()
 
 test("cIMG-0007-00001.jpg")
