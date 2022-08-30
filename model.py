@@ -18,8 +18,6 @@ ax.set_xlim(-200, 700)
 ax.set_ylim(-200, 400)
 ax.set_zlim(0, 400)
 
-
-
 def model(starting_slice, number_of_slices, interval):
     print("Collecting points")
     collected_points = multi_point(starting_slice, number_of_slices, interval) 
