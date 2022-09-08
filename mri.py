@@ -23,23 +23,23 @@ def generate_data(input_image): #takes pre-processed image and generates 2D data
     coordinates_2D = cv.HoughLinesP(input_image, cv.HOUGH_PROBABILISTIC, np.pi/180, 200, maxLineGap, minLineLength)
     return coordinates_2D
 
-def draw_line(canvas_image, points, color): #takes canvas_image, points, and color (#,#,#) and returns canvas_image with lines from points
+def draw_line(canvas_image, points, color, thickness): #takes canvas_image, points, and color (#,#,#) and returns canvas_image with lines from points
     for x in range(0, len(points)):
         for x1,y1,x2,y2 in points[x]:
             pts = np.array([[x1, y1], [x2, y2]], np.int32)
-            cv.polylines(canvas_image, [pts], True, color, 1)
+            cv.polylines(canvas_image, [pts], True, color, thickness)
     return canvas_image
 
 def priori(previous_image, current_image): #work in progress
     previous_image = cv.imread(previous_image)
     current_image = cv.imread(current_image)
-    pre_pre, prev_scaled = image_preprocessing(previous_image)
-    prev_coordinates_2D = generate_data(pre_pre)
+    pre_pre, prev_scaled = image_preprocessing(previous_image) #creates cropped previous_image
+    prev_coordinates_2D = generate_data(pre_pre) #generates data points for cropped previous_image 
 
-    pre_current, curr_scaled = image_preprocessing(current_image)
-    te, temp = image_preprocessing(current_image)
-    adapted = draw_line(curr_scaled, prev_coordinates_2D, (200, 200, 200))\
-
+    curr_pre, curr_scaled = image_preprocessing(current_image) #creates scaled image for current_image
+    #layers previous_image data onto scaled current_image
+    adapted = draw_line(curr_scaled, prev_coordinates_2D, (0, 0, 0), 2)
+    #performs image processing on adapted image 
     gray = cv.cvtColor(adapted, cv.COLOR_BGR2GRAY)
     sobel = cv.Sobel(gray, cv.CV_64F, dx=0, dy=1, ksize=3)
     blurred = cv.GaussianBlur(sobel, (31, 31), 0, 1)
@@ -47,12 +47,11 @@ def priori(previous_image, current_image): #work in progress
     convert = convert_64_8(thresh)
 
     priori_coords = generate_data(convert)
-    priori_final = draw_line(temp, priori_coords, (0, 0, 255))
+    priori_final = draw_line(curr_scaled, priori_coords, (0, 0, 255), 1)
 
     #priori_coordinates = generate_data('test.jpg')
     #adapted = draw_line(original_pre, priori_coordinates)
  
-    cv.imshow("priori_final", priori_final)
     cv.waitKey()
 
 def draw_blank_lines(input_image, canvas, z): #retired
