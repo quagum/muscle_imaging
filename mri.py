@@ -51,21 +51,8 @@ def priori(previous_image, current_image): #work in progress
 
     #priori_coordinates = generate_data('test.jpg')
     #adapted = draw_line(original_pre, priori_coordinates)
- 
+    cv.imshow('final', priori_final)
     cv.waitKey()
-
-def draw_blank_lines(input_image, canvas, z): #retired
-    minLineLength = 150
-    maxLineGap = 0
-    lines = cv.HoughLinesP(input_image, cv.HOUGH_PROBABILISTIC, np.pi/180, 200, maxLineGap, minLineLength)
-    coordinates = []
-    for x in range(0, len(lines)):
-        for x1,y1,x2,y2 in lines[x]:
-            line = [[x1, y1, z], [x2, y2, z]]
-            pts = np.array([[x1, y1], [x2, y2]], np.int32)
-            coordinates.append(line)
-            cv.polylines(canvas, [pts], True, (0, 255, 255), 1)
-    return canvas, coordinates
 
 def single_image(image_path): 
     scaled = cv.imread(image_path)
