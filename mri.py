@@ -11,15 +11,15 @@ def image_preprocessing(image): #takes image and returns cropped processed image
     cropped = image[100:600, 0:951]
     scaled = cv.pyrDown(cropped)  
     gray = cv.cvtColor(scaled, cv.COLOR_BGR2GRAY)
-    sobel = cv.Sobel(gray, cv.CV_64F, dx=0, dy=1, ksize=3)
+    sobel = cv.Sobel(gray, cv.CV_64F, dx=0, dy=1, ksize=1) #ksize =3 
     blurred = cv.GaussianBlur(sobel, (31, 31), 0, 1)
     T, thresh = cv.threshold(blurred, 1, 255, cv.THRESH_BINARY)
     convert = convert_64_8(thresh)
     return convert, scaled
 
 def generate_data(input_image): #takes pre-processed image and generates 2D data points
-    minLineLength = 150
-    maxLineGap = 0
+    minLineLength = 140
+    maxLineGap = 10
     coordinates_2D = cv.HoughLinesP(input_image, cv.HOUGH_PROBABILISTIC, np.pi/180, 200, maxLineGap, minLineLength)
     return coordinates_2D
 
@@ -29,30 +29,6 @@ def draw_line(canvas_image, points, color, thickness): #takes canvas_image, poin
             pts = np.array([[x1, y1], [x2, y2]], np.int32)
             cv.polylines(canvas_image, [pts], True, color, thickness)
     return canvas_image
-
-def priori(previous_image, current_image): #work in progress
-    previous_image = cv.imread(previous_image)
-    current_image = cv.imread(current_image)
-    pre_pre, prev_scaled = image_preprocessing(previous_image) #creates cropped previous_image
-    prev_coordinates_2D = generate_data(pre_pre) #generates data points for cropped previous_image 
-
-    curr_pre, curr_scaled = image_preprocessing(current_image) #creates scaled image for current_image
-    #layers previous_image data onto scaled current_image
-    adapted = draw_line(curr_scaled, prev_coordinates_2D, (0, 0, 0), 2)
-    #performs image processing on adapted image 
-    gray = cv.cvtColor(adapted, cv.COLOR_BGR2GRAY)
-    sobel = cv.Sobel(gray, cv.CV_64F, dx=0, dy=1, ksize=3)
-    blurred = cv.GaussianBlur(sobel, (31, 31), 0, 1)
-    T, thresh = cv.threshold(blurred, 1, 255, cv.THRESH_BINARY)
-    convert = convert_64_8(thresh)
-
-    priori_coords = generate_data(convert)
-    priori_final = draw_line(curr_scaled, priori_coords, (0, 0, 255), 1)
-
-    #priori_coordinates = generate_data('test.jpg')
-    #adapted = draw_line(original_pre, priori_coordinates)
-    cv.imshow('final', priori_final)
-    cv.waitKey()
 
 def single_image(image_path): 
     scaled = cv.imread(image_path)
@@ -113,6 +89,61 @@ def multi_point(starting_slice, number_of_scans, interval): #takes all scans in 
         all_points.append(coordinates)
     return all_points
 
-priori('cIMG-0007-00058.jpg', 'cIMG-0007-00059.jpg')
+def priori(previous_image, current_image): #work in progress
+    title = current_image
+    previous_image = cv.imread(previous_image)
+    current_image = cv.imread(current_image)
+    pre_pre, prev_scaled = image_preprocessing(previous_image) #creates cropped previous_image
+    prev_coordinates_2D = generate_data(pre_pre) #generates data points for cropped previous_image 
+
+    curr_pre, curr_scaled = image_preprocessing(current_image) #creates scaled image for current_image
+    #layers previous_image data onto scaled current_image
+    adapted = draw_line(curr_scaled, prev_coordinates_2D, (0, 0, 0), 2)
+    #performs image processing on adapted image 
+    gray = cv.cvtColor(adapted, cv.COLOR_BGR2GRAY)
+    sobel = cv.Sobel(gray, cv.CV_64F, dx=0, dy=1, ksize=3)
+    blurred = cv.GaussianBlur(sobel, (31, 31), 0, 1)
+    T, thresh = cv.threshold(blurred, 1, 255, cv.THRESH_BINARY)
+    convert = convert_64_8(thresh)
+
+    priori_coords = generate_data(convert)
+    priori_final = draw_line(curr_scaled, priori_coords, (0, 0, 255), 1)
+
+    cv.imshow(title, priori_final)
+    cv.waitKey()
+
+#priori('cIMG-0007-00072.jpg', 'cIMG-0007-00073.jpg')
 #cropped image dimensions: x=476 y=200
 
+def multi_priori(scan_dir): #folder name holding all ultrasounds
+    file_0 = (os.listdir(scan_dir))[0] #gets first scan 
+    file_0 = os.path.join(scan_dir, file_0) #creates relative path to first scan
+    image_0 = cv.imread(file_0) #reads path to first scan 
+    pre_image_0, cropped_image_0 = image_preprocessing(image_0) #pre-processes first scan
+    image_0_coordinates_2D = generate_data(pre_image_0) #generates 2D data from first scan 
+    queue = [image_0_coordinates_2D] #creates queue with first scan's 2D data 
+
+    for i in range(1, len(os.listdir(scan_dir))):
+        prev_coordinates_2D = queue.pop(0)
+        curr_file = (os.listdir(scan_dir))[i]
+        curr_file = os.path.join(scan_dir, curr_file)
+        curr_image = cv.imread(curr_file)
+        curr_pre, curr_scaled = image_preprocessing(curr_image)
+        test, test1 = image_preprocessing(curr_image)
+        adapted = draw_line(curr_scaled, prev_coordinates_2D, (0, 0, 0), 1)
+
+        gray = cv.cvtColor(adapted, cv.COLOR_BGR2GRAY)
+        sobel = cv.Sobel(gray, cv.CV_64F, dx=0, dy=1, ksize=1) #ksize = 3
+        blurred = cv.GaussianBlur(sobel, (31, 31), 0, 1)
+        T, thresh = cv.threshold(blurred, 1, 255, cv.THRESH_BINARY)
+        convert = convert_64_8(thresh)
+        priori_coords = generate_data(convert)
+
+        queue.append(priori_coords)
+
+        final = draw_line(test1, priori_coords, (255, 255, 255), 1)
+        cv.imshow("test", final)
+        cv.waitKey(10)
+
+
+multi_priori("scans")
